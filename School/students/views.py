@@ -6,13 +6,17 @@ from rest_framework.views import APIView
 import datetime,  json
 import mysql.connector as sql
 from .models import Students
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import SessionAuthentication
 
 # Create your views here.
 class Create(APIView):
     
     def post(self, request):
+        
+        token = request.COOKIES.get('jwt')
+
+        if not token:
+            raise AuthenticationFailed('Unauthenticated!')
+
         m = sql.connect(host='localhost', user='root', password="Kamalgarg@28", database='school')
         cursor = m.cursor()
         name = request.data['name']
@@ -22,7 +26,6 @@ class Create(APIView):
         grade = request.data['grade']
         section = request.data['section']
         c = "insert into students_students(name,email,address,city,grade,section) Values('{}','{}','{}','{}','{}','{}')".format(name,email,address,city,grade,section)
-        print(c)
         cursor.execute(c)
         m.commit()
         response = Response()
@@ -33,14 +36,19 @@ class Create(APIView):
 
 
 class Read(APIView):
-    permission_classes = [IsAuthenticated]
-    #authentication_classes = [SessionAuthentication]
+
     def get(self, request):
+
+        token = request.COOKIES.get('jwt')
+
+        if not token:
+            raise AuthenticationFailed('Unauthenticated!')
 
         try:
             m = sql.connect(host='localhost', user='root', password="Kamalgarg@28", database='school')
         except:
             print("Connection error in MySQL")
+            
         cursor = m.cursor()
         c = "select * from students_students"
         cursor.execute(c)
@@ -48,13 +56,25 @@ class Read(APIView):
         m.commit()
         pagination = request.data['pagination']
         response = Response()
-        response.data = t[:pagination]
+
+        if pagination['first_index'] >= pagination['last_index']:
+            response.data = {
+            'message': 'Invalid Indexing!'
+            }
+        else:
+            response.data = t[pagination['first_index']:pagination['last_index']]
         return response
 
 
 class Update(APIView):
 
     def post(self, request):
+        
+        token = request.COOKIES.get('jwt')
+
+        if not token:
+            raise AuthenticationFailed('Unauthenticated!')
+
         m = sql.connect(host='localhost', user='root', password="Kamalgarg@28", database='school')
         cursor = m.cursor()
         name = request.data['name']
@@ -78,6 +98,12 @@ class Update(APIView):
 class Delete(APIView):
     
     def post(self, request):
+
+        token = request.COOKIES.get('jwt')
+
+        if not token:
+            raise AuthenticationFailed('Unauthenticated!')
+
         m = sql.connect(host='localhost', user='root', password="Kamalgarg@28", database='school')
         cursor = m.cursor()
         email = request.data['email']

@@ -7,7 +7,7 @@ from yaml import serialize
 from .serializers import UserSerializer
 from .models import User
 import jwt, datetime
-from rest_framework.permissions import IsAuthenticated
+
 
 # Create your views here.
 class RegisterView(APIView):
@@ -16,6 +16,7 @@ class RegisterView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
 
 class LoginView(APIView):
     def post(self, request):
@@ -44,12 +45,12 @@ class LoginView(APIView):
            'jwt': token,
         }
 
-
         return response
 
 
 class UserView(APIView):
     def get(self, request):
+        
         token = request.COOKIES.get('jwt')
 
         if not token:
@@ -58,7 +59,7 @@ class UserView(APIView):
         try:
             payload = jwt.decode(token, 'secret', algorithms=['HS256'])
         except jwt.ExpiredSignatureError:
-            raise AuthenticationFailed('Unauthenticated!')
+            raise AuthenticationFailed('Session Expired!')
 
         user = User.objects.filter(id=payload['id']).first()
         serializer = UserSerializer(user)
